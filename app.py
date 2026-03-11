@@ -11,7 +11,7 @@ def ler_csv_upload(ficheiro):
     # tenta ; primeiro
     try:
         ficheiro.seek(0)
-        return pd.read_csv(ficheiro, sep=",", skiprows=0, header = 0)
+        return pd.read_csv(ficheiro, sep=",", skiprows=0, header = 2)
     except Exception:
         try:
             ficheiro.seek(0)
