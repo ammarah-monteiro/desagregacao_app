@@ -11,7 +11,7 @@ def ler_csv_upload(ficheiro):
     # tenta ; primeiro, porque o teu ficheiro original usa esse separador
     try:
         ficheiro.seek(0)
-        return pd.read_csv(ficheiro, sep=";")
+        return pd.read_csv(ficheiro, sep=",")
     except Exception:
         ficheiro.seek(0)
         return pd.read_csv(ficheiro)
