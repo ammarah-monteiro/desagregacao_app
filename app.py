@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from io import StringIO
 from processamento import processar_dataframe
 
 st.set_page_config(page_title="Desagregação de Linhas", layout="wide")
@@ -9,47 +8,45 @@ st.title("Aplicação de Desagregação de Linhas")
 st.write("Carrega um ficheiro CSV, processa os dados e descarrega o resultado.")
 
 def ler_csv_upload(ficheiro):
-    from io import StringIO
-    import pandas as pd
+# tenta ; primeiro, porque o teu ficheiro original usa esse separador
+try:
+ficheiro.seek(0)
+        return pd.read_csv(ficheiro, sep=";")
+        return pd.read_csv(ficheiro, sep=",")
+except Exception:
+ficheiro.seek(0)
+return pd.read_csv(ficheiro)
 
-    ficheiro.seek(0)
-    conteudo = ficheiro.read().decode("utf-8", errors="ignore")
-    linhas = conteudo.splitlines()
+ficheiro = st.file_uploader("Escolhe um ficheiro CSV", type=["csv"])
 
-    header_idx = 0
-    for i, linha in enumerate(linhas[:15]):
-        texto = linha.upper()
-        if "AIRPORT" in texto and "START DATE" in texto:
-            header_idx = i
-            break
+if ficheiro is not None:
+try:
+df = ler_csv_upload(ficheiro)
 
-    linhas_dados = linhas[header_idx:]
-    total_linhas_brutas = len(linhas_dados) - 1  # sem cabeçalho
-    conteudo_limpo = "\n".join(linhas_dados)
+st.success("Ficheiro carregado com sucesso.")
+st.write(f"Linhas: {len(df)} | Colunas: {len(df.columns)}")
 
-    try:
-        df = pd.read_csv(
-            StringIO(conteudo_limpo),
-            sep=None,
-            engine="python",
-            skip_blank_lines=True,
-            quotechar='"',
-            on_bad_lines="skip"
-        )
-    except Exception:
-        df = pd.read_csv(
-            StringIO(conteudo_limpo),
-            sep=";",
-            engine="python",
-            skip_blank_lines=True,
-            quotechar='"',
-            on_bad_lines="skip"
-        )
+st.subheader("Pré-visualização do input")
+st.dataframe(df.head(20), use_container_width=True)
 
-    df.columns = df.columns.astype(str).str.strip()
-    df = df.dropna(axis=1, how="all")
+if st.button("Processar ficheiro"):
+with st.spinner("A processar..."):
+df_final = processar_dataframe(df)
 
-    linhas_lidas = len(df)
-    linhas_ignoradas = max(total_linhas_brutas - linhas_lidas, 0)
+st.success("Processamento concluído.")
 
-    return df, linhas_ignoradas
+st.subheader("Pré-visualização do output")
+st.dataframe(df_final.head(20), use_container_width=True)
+
+csv_saida = df_final.to_csv(index=False).encode("utf-8")
+
+st.download_button(
+label="Descarregar resultado CSV",
+data=csv_saida,
+file_name="resultado_expandido.csv",
+mime="text/csv"
+)
+
+except Exception as e:
+        st.error(f"Ocorreu um erro: {e}")
+        st.error(f"Ocorreu um erro: {e}")
